@@ -25,22 +25,38 @@ export default function PreviewPage() {
     try {
       const parsedData = JSON.parse(storedData)
       setCardData(parsedData)
-      generateCard(parsedData)
     } catch (error) {
       console.error("Error parsing stored data:", error)
       router.push("/")
     }
   }, [router])
 
+  // NEW EFFECT: generate card only when both cardData and canvas are ready
+  useEffect(() => {
+    if (cardData && canvasRef.current) {
+      generateCard(cardData)
+    }
+  }, [cardData, canvasRef])
+
   const generateCard = useCallback(async (data: { message: string; userName: string }) => {
     if (!data) return
 
     try {
       const canvas = canvasRef.current
-      if (!canvas) return
+      console.log("Canvas ref:", canvas)
+      if (!canvas) {
+        console.error("Canvas not found")
+        setIsGenerating(false)
+        return
+      }
 
       const ctx = canvas.getContext("2d")
-      if (!ctx) return
+      console.log("Canvas context:", ctx)
+      if (!ctx) {
+        console.error("Canvas context not found")
+        setIsGenerating(false)
+        return
+      }
 
       // Set canvas dimensions to match the image aspect ratio
       canvas.width = 960
@@ -50,12 +66,27 @@ export default function PreviewPage() {
       const img = new Image()
       img.crossOrigin = "anonymous"
 
+      // Use the existing template image
+      console.log("Attempting to load image from URL")
+      const imageUrl = "/images/eid-card-template.png"
+      img.src = imageUrl
+
+      // Add a timeout to handle cases where the image takes too long to load
+      const imageLoadTimeout = setTimeout(() => {
+        if (!img.complete) {
+          console.log("Image load timed out, using fallback")
+          img.onerror(new Error("Image load timeout"))
+        }
+      }, 5000) // 5 second timeout
+
       img.onload = () => {
+        clearTimeout(imageLoadTimeout)
+        console.log("Image loaded successfully")
         // Draw background image
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
 
         // Set text properties for message
-        ctx.font = `bold 32px Arial`
+        ctx.font = `bold 32px Arial, sans-serif`
         ctx.fillStyle = "#FFFFFF"
         ctx.textAlign = "center"
         ctx.textBaseline = "middle"
@@ -78,11 +109,11 @@ export default function PreviewPage() {
         })
 
         // Draw "From: [userName]" at the bottom
-        ctx.font = `bold 24px Arial`
+        ctx.font = `bold 24px Arial, sans-serif`
         ctx.fillText(`From: ${data.userName}`, canvas.width / 2, canvas.height - 100)
 
         // Add ACS Future School branding
-        ctx.font = `bold 18px Arial`
+        ctx.font = `bold 18px Arial, sans-serif`
         ctx.fillText("ACS Future School", canvas.width / 2, canvas.height - 50)
 
         // Convert canvas to JPEG
@@ -91,8 +122,9 @@ export default function PreviewPage() {
         setIsGenerating(false)
       }
 
-      img.onerror = () => {
-        console.error("Error loading image")
+      img.onerror = (error) => {
+        console.error("Error loading image:", error)
+        console.log("Attempting to use fallback background")
         // Create a fallback gradient background
         const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
         gradient.addColorStop(0, "#c2185b")
@@ -137,10 +169,6 @@ export default function PreviewPage() {
         setGeneratedCard(jpegDataUrl)
         setIsGenerating(false)
       }
-
-      // Use the blob URL directly instead of the local path
-      img.src =
-        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WhatsApp%20Image%202025-06-01%20at%2015.23.53-pAC3YnOb9OnnVDUUrhDa5JXdz7DLf6.jpeg"
     } catch (error) {
       console.error("Error generating card:", error)
       setIsGenerating(false)
