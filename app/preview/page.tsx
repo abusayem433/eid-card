@@ -44,126 +44,57 @@ export default function PreviewPage() {
 
     try {
       const canvas = canvasRef.current
-      console.log("Canvas ref:", canvas)
       if (!canvas) {
-        console.error("Canvas not found")
         setIsGenerating(false)
         return
       }
-
       const ctx = canvas.getContext("2d")
-      console.log("Canvas context:", ctx)
       if (!ctx) {
-        console.error("Canvas context not found")
         setIsGenerating(false)
         return
       }
-
-      // Set canvas dimensions to match the image aspect ratio
       canvas.width = 960
       canvas.height = 1280
 
-      // Create background image
-      const img = new Image()
-      img.crossOrigin = "anonymous"
-
       // Use the appropriate template image based on gender
-      let imageUrl = "/images/eid-card-template-female.png";
+      let imageUrl = "/images/eid-card-template-female.jpeg";
       if (data.gender === "ছেলে") {
         imageUrl = "/images/eid-card-template-male.jpeg";
       }
-      console.log("Attempting to load image from URL", imageUrl);
+      const img = new window.Image()
+      img.crossOrigin = "anonymous"
       img.src = imageUrl
 
-      // Add a timeout to handle cases where the image takes too long to load
       const imageLoadTimeout = setTimeout(() => {
         if (!img.complete) {
-          console.log("Image load timed out, using fallback")
           if (typeof img.onerror === 'function') {
             img.onerror(new Event('error'))
           }
         }
-      }, 5000) // 5 second timeout
+      }, 5000)
 
       img.onload = () => {
         clearTimeout(imageLoadTimeout)
-        console.log("Image loaded successfully")
-        // Draw background image
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-
-        // Set text properties for message
-        ctx.font = `36px 'Noto Sans Bengali', 'Hind Siliguri', Arial, sans-serif`
-        ctx.fillStyle = data.gender === "ছেলে" ? "#000000" : "#FFFFFF"
-        ctx.textAlign = "center"
-        ctx.textBaseline = "middle"
-
-        // Draw message in the middle of the image with wrapping
-        const lineHeight = 36 * 1.2;
-        const maxWidth = canvas.width - 120; // 60px padding on each side
-        const startY = data.gender === "মেয়ে" ? canvas.height / 2 - 200 : canvas.height / 2 - 250;
-        const lines = data.message.split("\n");
-        let totalLines = 0;
-        lines.forEach((line, index) => {
-          totalLines += wrapText(ctx, line, canvas.width / 2, startY + totalLines * lineHeight, maxWidth, lineHeight);
-        });
-        const totalTextHeight = lineHeight * totalLines;
-
-        // Draw "From: [userName]" directly below the greetings text
-        ctx.font = `24px 'Noto Sans Bengali', 'Hind Siliguri', Arial, sans-serif`
-        ctx.fillStyle = data.gender === "ছেলে" ? "#000000" : "#FFFFFF"
-        ctx.fillText(`- ${data.userName}`, canvas.width / 2, startY + totalTextHeight + 40)
-
-        // Convert canvas to JPEG
+        drawCardText(ctx, data, canvas)
         const jpegDataUrl = canvas.toDataURL("image/jpeg", 0.95)
         setGeneratedCard(jpegDataUrl)
         setIsGenerating(false)
       }
 
-      img.onerror = (error) => {
-        console.error("Error loading image:", error)
-        console.log("Attempting to use fallback background")
-        // Create a fallback gradient background
+      img.onerror = () => {
+        // fallback gradient background
         const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
         gradient.addColorStop(0, "#c2185b")
         gradient.addColorStop(1, "#8e24aa")
-
         ctx.fillStyle = gradient
         ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-        // Add fallback text
-        ctx.fillStyle = "#FFFFFF"
-        ctx.font = "36px 'Noto Sans Bengali', 'Hind Siliguri', Arial, sans-serif"
-        ctx.textAlign = "center"
-        ctx.fillText("Eid Mubarak", canvas.width / 2, 200)
-
-        // Continue with the rest of the text rendering...
-        ctx.font = `36px 'Noto Sans Bengali', 'Hind Siliguri', Arial, sans-serif`
-        ctx.fillStyle = "#FFFFFF"
-        ctx.textAlign = "center"
-        ctx.textBaseline = "middle"
-
-        const fallbackLineHeight = 36 * 1.2;
-        const fallbackMaxWidth = canvas.width - 120;
-        const fallbackStartY = canvas.height / 2 - 50;
-        const fallbackLines = data.message.split("\n");
-        let fallbackTotalLines = 0;
-        fallbackLines.forEach((line, index) => {
-          fallbackTotalLines += wrapText(ctx, line, canvas.width / 2, fallbackStartY + fallbackTotalLines * fallbackLineHeight, fallbackMaxWidth, fallbackLineHeight);
-        });
-        const fallbackTotalTextHeight = fallbackLineHeight * fallbackTotalLines;
-
-        ctx.font = `24px 'Noto Sans Bengali', 'Hind Siliguri', Arial, sans-serif`
-        ctx.fillText(`- ${data.userName}`, canvas.width / 2, canvas.height - 100)
-
-        ctx.font = `18px 'Noto Sans Bengali', 'Hind Siliguri', Arial, sans-serif`
-        ctx.fillText("ACS Future School", canvas.width / 2, canvas.height - 50)
-
+        drawCardText(ctx, data, canvas)
         const jpegDataUrl = canvas.toDataURL("image/jpeg", 0.95)
         setGeneratedCard(jpegDataUrl)
         setIsGenerating(false)
       }
     } catch (error) {
-      console.error("Error generating card:", error)
       setIsGenerating(false)
     }
   }, [])
@@ -322,4 +253,31 @@ function wrapText(
     ctx.fillText(l, x, y + i * lineHeight);
   });
   return lines.length;
+}
+
+// Single function for all text rendering
+function drawCardText(
+  ctx: CanvasRenderingContext2D,
+  data: { message: string; userName: string; gender: string },
+  canvas: HTMLCanvasElement
+) {
+  // Always use black text color for greeting
+  const textColor = "#000000";
+  const nameColor = "#e11d48"; // Tailwind's red-600
+  ctx.font = `36px 'Noto Sans Bengali', 'Hind Siliguri', Arial, sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const lineHeight = 36 * 1.2;
+  const maxWidth = canvas.width - 120;
+  const startY = data.gender === "মেয়ে" ? canvas.height / 2 - 275 : canvas.height / 2 - 250;
+  const lines = data.message.split("\n");
+  let totalLines = 0;
+  lines.forEach((line) => {
+    ctx.fillStyle = textColor;
+    totalLines += wrapText(ctx, line, canvas.width / 2, startY + totalLines * lineHeight, maxWidth, lineHeight);
+  });
+  // Draw user name immediately after the last line, with no extra spacing, same font size, but in red
+  ctx.font = `36px 'Noto Sans Bengali', 'Hind Siliguri', Arial, sans-serif`;
+  ctx.fillStyle = nameColor;
+  ctx.fillText(`- ${data.userName}`, canvas.width / 2, startY + totalLines * lineHeight);
 }
