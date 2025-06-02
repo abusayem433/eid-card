@@ -280,4 +280,4 @@ function drawCardText(
   ctx.font = `36px 'Noto Sans Bengali', 'Hind Siliguri', Arial, sans-serif`;
   ctx.fillStyle = nameColor;
   ctx.fillText(`- ${data.userName}`, canvas.width / 2, startY + totalLines * lineHeight);
-}
+} 
