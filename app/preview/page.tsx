@@ -167,22 +167,14 @@ export default function PreviewPage() {
             </CardContent>
 
             <CardFooter className="flex flex-col gap-4">
-              <div className="flex gap-4 w-full">
-                <Button
-                  onClick={downloadCard}
-                  disabled={isGenerating}
-                  className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  কার্ড ডাউনলোড করো
-                </Button>
-
-                <Button variant="outline" onClick={goBack} className="border-pink-300 text-pink-700 hover:bg-pink-50">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  ফর্মে ফিরে যাও
-                </Button>
-              </div>
-
+              <Button
+                onClick={downloadCard}
+                disabled={isGenerating}
+                className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                কার্ড ডাউনলোড করো
+              </Button>
               <Button
                 variant="secondary"
                 className="w-full"
@@ -209,6 +201,14 @@ export default function PreviewPage() {
               >
                 <Share2 className="w-4 h-4 mr-2" />
                 কার্ড শেয়ার করো
+              </Button>
+              <Button
+                variant="outline"
+                onClick={goBack}
+                className="w-full border-pink-300 text-pink-700 hover:bg-pink-50 text-base"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                ফর্মে ফিরে যাও
               </Button>
             </CardFooter>
           </Card>
