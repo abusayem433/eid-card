@@ -46,7 +46,15 @@ export default function PreviewPage() {
     img.crossOrigin = "anonymous"
     img.src = selectedDesign
 
+    // Fallback: if the image never finishes loading (mobile/network issues),
+    // stop the spinner and at least show the plain design after a timeout.
+    const timeoutId = window.setTimeout(() => {
+      setGeneratedCard(selectedDesign)
+      setIsGenerating(false)
+    }, 10000)
+
     img.onload = () => {
+      window.clearTimeout(timeoutId)
       const canvas = document.createElement("canvas")
       canvas.width = img.naturalWidth || 960
       canvas.height = img.naturalHeight || 1280
@@ -65,8 +73,12 @@ export default function PreviewPage() {
     }
 
     img.onerror = () => {
+      window.clearTimeout(timeoutId)
       setGeneratedCard(selectedDesign)
       setIsGenerating(false)
+    }
+    return () => {
+      window.clearTimeout(timeoutId)
     }
   }, [cardData, selectedDesign])
 
